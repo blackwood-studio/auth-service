@@ -56,9 +56,9 @@ async fn delete() -> impl Responder {
 async fn main() -> Result<()> {
     HttpServer::new(|| {
         let pg_options = PgConnectOptions::new()
-        .host("localhost")
-        .database("user")
-        .username(dotenv!("DATABASE_USER"))
+        .host(dotenv!("HOST_ADDRESS"))
+        .database(dotenv!("DATABASE_NAME"))
+        .username(dotenv!("DATABASE_USER_NAME"))
         .password(dotenv!("DATABASE_USER_PASSWORD"));
 
         let pool = PgPool::connect_lazy_with(pg_options);
