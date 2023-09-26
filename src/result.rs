@@ -7,7 +7,7 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-use std::error::Error;
 use std::result;
+use crate::exception::Exception;
 
-pub type Result<T> = result::Result<T, Box<dyn Error>>;
+pub type Result<T> = result::Result<T, Exception>;

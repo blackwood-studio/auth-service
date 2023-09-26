@@ -10,17 +10,25 @@
 #[macro_use]
 extern crate dotenv_codegen;
 
+use std::io;
+
 use actix_web::App;
 use actix_web::HttpResponse;
 use actix_web::HttpServer;
 use actix_web::Responder;
+use actix_web::cookie::Cookie;
 use actix_web::get;
+use actix_web::post;
 use actix_web::web::Data;
+use actix_web::web::Json;
 
-use auth_service::Result;
+use auth_service::form::Register;
+use auth_service::service::Accounts;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgConnectOptions;
+
+use validator::Validate;
 
 #[get("/api/user")]
 async fn get() -> impl Responder {
@@ -32,9 +40,24 @@ async fn login() -> impl Responder {
     HttpResponse::Ok().body("/api/user/login")
 }
 
-#[get("/api/user/register")]
-async fn register() -> impl Responder {
-    HttpResponse::Ok().body("/api/user/register")
+#[post("/api/user/register")]
+async fn register(pool: Data<PgPool>, register: Json<Register>) -> auth_service::Result<impl Responder> {
+    register.validate()?;
+    
+    if Accounts::find_by_email(&pool, &register.email).await?.is_some() {
+        return Ok(HttpResponse::Conflict().body("Account already exists"));
+    }
+
+    let account = Accounts::create(pool, &register.email, &register.password).await?;
+    let write_key_cookie = Cookie::build("WRITE_KEY", &account.write_key).finish();
+    let read_key_cookie = Cookie::build("READ_KEY", &account.read_key).finish();
+
+    Ok(
+        HttpResponse::Ok()
+        .cookie(write_key_cookie)
+        .cookie(read_key_cookie)
+        .body("Ok")
+    )
 }
 
 #[get("/api/user/authenticate")]
@@ -53,7 +76,7 @@ async fn delete() -> impl Responder {
 }
 
 #[actix_web::main]
-async fn main() -> Result<()> {
+async fn main() -> io::Result<()> {
     HttpServer::new(|| {
         let pg_options = PgConnectOptions::new()
         .host(dotenv!("HOST_ADDRESS"))
