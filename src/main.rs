@@ -27,6 +27,7 @@ use auth_service::service::Accounts;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgConnectOptions;
+
 use validator::Validate;
 
 #[get("/api/user")]
