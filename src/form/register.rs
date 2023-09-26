@@ -17,7 +17,7 @@ pub struct Register {
     #[validate(length(max = 255, message = "The max size of the email is 255"))]
     pub email: String,
 
-    #[validate(length(min = 1, message = "The min size of the password is 1"))]
+    #[validate(length(min = 8, message = "The min size of the password is 8"))]
     #[validate(length(max = 255, message = "The max size of the password is 255"))]
     pub password: String
 }

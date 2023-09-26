@@ -51,7 +51,12 @@ async fn register(pool: Data<PgPool>, register: Json<Register>) -> auth_service:
     let write_key_cookie = Cookie::build("WRITE_KEY", &account.write_key).finish();
     let read_key_cookie = Cookie::build("READ_KEY", &account.read_key).finish();
 
-    Ok(HttpResponse::Ok().cookie(write_key_cookie).cookie(read_key_cookie).body("Ok"))
+    Ok(
+        HttpResponse::Ok()
+        .cookie(write_key_cookie)
+        .cookie(read_key_cookie)
+        .body("Ok")
+    )
 }
 
 #[get("/api/user/authenticate")]
