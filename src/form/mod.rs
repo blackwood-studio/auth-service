@@ -7,5 +7,5 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-mod register;
-pub use register::Register;
+mod auth;
+pub use auth::Auth;

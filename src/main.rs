@@ -22,7 +22,7 @@ use actix_web::post;
 use actix_web::web::Data;
 use actix_web::web::Json;
 
-use auth_service::form::Register;
+use auth_service::form::Auth;
 use auth_service::service::Accounts;
 
 use sqlx::PgPool;
@@ -35,20 +35,41 @@ async fn get() -> impl Responder {
     HttpResponse::Ok().body("/api/user")
 }
 
-#[get("/api/user/login")]
-async fn login() -> impl Responder {
-    HttpResponse::Ok().body("/api/user/login")
+#[post("/api/user/login")]
+async fn login(pool: Data<PgPool>, auth: Json<Auth>) -> auth_service::Result<impl Responder> {
+    auth.validate()?;
+    
+    let account = match Accounts::find_by_email(&pool, &auth.email).await? {
+        Some(account) => account,
+        None => {
+            return Ok(HttpResponse::Forbidden().body("Invalid login data"))
+        }
+    };
+
+    if !account.verify(&auth.password)? {
+        return Ok(HttpResponse::Forbidden().body("Invalid login data"));
+    }
+
+    let write_key_cookie = Cookie::build("WRITE_KEY", &account.write_key).finish();
+    let read_key_cookie = Cookie::build("READ_KEY", &account.read_key).finish();
+
+    Ok(
+        HttpResponse::Ok()
+        .cookie(write_key_cookie)
+        .cookie(read_key_cookie)
+        .body("Ok")
+    )
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, register: Json<Register>) -> auth_service::Result<impl Responder> {
-    register.validate()?;
+async fn register(pool: Data<PgPool>, auth: Json<Auth>) -> auth_service::Result<impl Responder> {
+    auth.validate()?;
     
-    if Accounts::find_by_email(&pool, &register.email).await?.is_some() {
+    if Accounts::find_by_email(&pool, &auth.email).await?.is_some() {
         return Ok(HttpResponse::Conflict().body("Account already exists"));
     }
 
-    let account = Accounts::create(pool, &register.email, &register.password).await?;
+    let account = Accounts::create(pool, &auth.email, &auth.password).await?;
     let write_key_cookie = Cookie::build("WRITE_KEY", &account.write_key).finish();
     let read_key_cookie = Cookie::build("READ_KEY", &account.read_key).finish();
 
