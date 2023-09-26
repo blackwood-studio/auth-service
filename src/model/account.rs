@@ -11,6 +11,7 @@ use bcrypt::BcryptError;
 use bcrypt::DEFAULT_COST;
 use bcrypt::hash;
 
+use bcrypt::verify;
 use sqlx::FromRow;
 
 use uuid::Uuid;
@@ -34,6 +35,12 @@ impl Account {
                 write_key: Uuid::new_v4().to_string(),
                 read_key: Uuid::new_v4().to_string()
             }
+        )
+    }
+
+    pub fn verify(&self, password: &String) -> Result<bool, BcryptError> {
+        Ok(
+            verify(password, &self.password)?
         )
     }
 }
