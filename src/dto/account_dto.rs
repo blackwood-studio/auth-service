@@ -11,7 +11,7 @@ use serde::Deserialize;
 use validator::Validate;
 
 #[derive(Validate, Deserialize)]
-pub struct Auth {
+pub struct AccountDto {
     #[serde(default)] 
     #[validate(email(message = "Invalid email address"))]
     #[validate(length(min = 1, message = "The min size of the email is 1"))]

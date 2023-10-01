@@ -7,6 +7,6 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
  
- mod accounts;
- pub use accounts::Accounts;
+mod account_service;
+pub use account_service::AccountService;
  

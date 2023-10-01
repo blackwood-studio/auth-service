@@ -42,19 +42,19 @@ impl ResponseError for Exception {
 }
 
 impl From<validator::ValidationErrors> for Exception {
-    fn from(errors: validator::ValidationErrors) -> Self {
+    fn from(errors: validator::ValidationErrors) -> Exception {
         Exception::ValidationError(errors)
     }
 }
 
 impl From<sqlx::Error> for Exception {
-    fn from(_: sqlx::Error) -> Self {
+    fn from(_: sqlx::Error) -> Exception {
         Exception::DatabaseError
     }
 }
 
 impl From<bcrypt::BcryptError> for Exception {
-    fn from(_: bcrypt::BcryptError) -> Self {
+    fn from(_: bcrypt::BcryptError) -> Exception {
         Exception::HashingError
     }
 }

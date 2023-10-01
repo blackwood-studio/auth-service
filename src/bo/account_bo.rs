@@ -7,5 +7,20 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-mod account;
-pub use account::Account;
+use serde::Serialize;
+use crate::entity::AccountEntity;
+
+#[derive(Serialize)]
+pub struct AccountBo {
+    pub id: i32,
+    pub email: String
+}
+
+impl From<AccountEntity> for AccountBo {
+    fn from(entity: AccountEntity) -> AccountBo {
+        AccountBo { 
+            id: entity.id, 
+            email: entity.email
+        }
+    }
+}
