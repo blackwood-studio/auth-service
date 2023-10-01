@@ -13,6 +13,7 @@ extern crate dotenv_codegen;
 use std::io;
 
 use actix_web::App;
+use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::HttpServer;
 use actix_web::Responder;
@@ -22,8 +23,9 @@ use actix_web::post;
 use actix_web::web::Data;
 use actix_web::web::Json;
 
-use auth_service::form::Auth;
-use auth_service::service::Accounts;
+use auth_service::bo::AccountBo;
+use auth_service::dto::AccountDto;
+use auth_service::service::AccountService;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgConnectOptions;
@@ -31,27 +33,41 @@ use sqlx::postgres::PgConnectOptions;
 use validator::Validate;
 
 #[get("/api/user")]
-async fn get() -> impl Responder {
-    HttpResponse::Ok().body("/api/user")
-}
+async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+    let read_key = match request.cookie("READ_KEY") {
+        Some(read_key_cookie) => read_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No read key provided"));
+        },
+    };
 
-#[post("/api/user/login")]
-async fn login(pool: Data<PgPool>, auth: Json<Auth>) -> auth_service::Result<impl Responder> {
-    auth.validate()?;
-    
-    let account = match Accounts::find_by_email(&pool, &auth.email).await? {
+    let entity = match AccountService::find_by_read_key(&pool, &read_key).await? {
         Some(account) => account,
         None => {
-            return Ok(HttpResponse::Forbidden().body("Invalid login data"))
+            return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
         }
     };
 
-    if !account.verify(&auth.password)? {
+    Ok(HttpResponse::Ok().json(AccountBo::from(entity)))
+}
+
+#[post("/api/user/login")]
+async fn login(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+    auth.validate()?;
+    
+    let entity = match AccountService::find_by_email(&pool, &auth.email).await? {
+        Some(account) => account,
+        None => {
+            return Ok(HttpResponse::Forbidden().body("Invalid login data"));
+        }
+    };
+
+    if !entity.verify(&auth.password)? {
         return Ok(HttpResponse::Forbidden().body("Invalid login data"));
     }
 
-    let write_key_cookie = Cookie::build("WRITE_KEY", &account.write_key).finish();
-    let read_key_cookie = Cookie::build("READ_KEY", &account.read_key).finish();
+    let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
+    let read_key_cookie = Cookie::build("READ_KEY", &entity.read_key).finish();
 
     Ok(
         HttpResponse::Ok()
@@ -62,16 +78,16 @@ async fn login(pool: Data<PgPool>, auth: Json<Auth>) -> auth_service::Result<imp
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, auth: Json<Auth>) -> auth_service::Result<impl Responder> {
+async fn register(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::Result<impl Responder> {
     auth.validate()?;
     
-    if Accounts::find_by_email(&pool, &auth.email).await?.is_some() {
+    if AccountService::find_by_email(&pool, &auth.email).await?.is_some() {
         return Ok(HttpResponse::Conflict().body("Account already exists"));
     }
 
-    let account = Accounts::create(pool, &auth.email, &auth.password).await?;
-    let write_key_cookie = Cookie::build("WRITE_KEY", &account.write_key).finish();
-    let read_key_cookie = Cookie::build("READ_KEY", &account.read_key).finish();
+    let entity = AccountService::create(pool, &auth.email, &auth.password).await?;
+    let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
+    let read_key_cookie = Cookie::build("READ_KEY", &entity.read_key).finish();
 
     Ok(
         HttpResponse::Ok()

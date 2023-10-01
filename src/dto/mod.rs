@@ -7,5 +7,5 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-mod auth;
-pub use auth::Auth;
+mod account_dto;
+pub use account_dto::AccountDto;

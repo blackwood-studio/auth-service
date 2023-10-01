@@ -7,8 +7,8 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-use bcrypt::BcryptError;
 use bcrypt::DEFAULT_COST;
+use bcrypt::BcryptError;
 use bcrypt::hash;
 
 use bcrypt::verify;
@@ -17,7 +17,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 #[derive(FromRow)]
-pub struct Account {
+pub struct AccountEntity {
     pub id: i32,
     pub email: String,
     pub password: String,
@@ -25,10 +25,10 @@ pub struct Account {
     pub read_key: String
 }
 
-impl Account {
-    pub fn new(email: &String, password: &String) -> Result<Account, BcryptError> {
+impl AccountEntity {
+    pub fn new(email: &String, password: &String) -> Result<AccountEntity, BcryptError> {
         Ok(
-            Account { 
+            AccountEntity { 
                 id: 0, 
                 email: email.clone(),
                 password: hash(password, DEFAULT_COST)?,
