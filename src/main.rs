@@ -42,7 +42,7 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<i
     };
 
     let entity = match AccountService::find_by_read_key(&pool, &read_key).await? {
-        Some(account) => account,
+        Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
         }
@@ -56,7 +56,7 @@ async fn login(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::Resu
     auth.validate()?;
     
     let entity = match AccountService::find_by_email(&pool, &auth.email).await? {
-        Some(account) => account,
+        Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid login data"));
         }
@@ -98,8 +98,19 @@ async fn register(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::R
 }
 
 #[get("/api/user/authenticate")]
-async fn authenticate() -> impl Responder {
-    HttpResponse::Ok().body("/api/user/authenticate")
+async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+    let read_key = match request.cookie("READ_KEY") {
+        Some(read_key_cookie) => read_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No read key provided"));
+        },
+    };
+
+    if AccountService::find_by_read_key(&pool, &read_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
+    }
+
+    Ok(HttpResponse::Ok().body("Ok"))
 }
 
 #[get("/api/user/update")]
