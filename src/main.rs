@@ -52,17 +52,17 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<i
 }
 
 #[post("/api/user/login")]
-async fn login(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::Result<impl Responder> {
-    auth.validate()?;
+async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+    dto.validate()?;
     
-    let entity = match AccountService::find_by_email(&pool, &auth.email).await? {
+    let entity = match AccountService::find_by_email(&pool, &dto.email).await? {
         Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid login data"));
         }
     };
 
-    if !entity.verify(&auth.password)? {
+    if !entity.verify(&dto.password)? {
         return Ok(HttpResponse::Forbidden().body("Invalid login data"));
     }
 
@@ -78,14 +78,14 @@ async fn login(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::Resu
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, auth: Json<AccountDto>) -> auth_service::Result<impl Responder> {
-    auth.validate()?;
+async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+    dto.validate()?;
     
-    if AccountService::find_by_email(&pool, &auth.email).await?.is_some() {
+    if AccountService::find_by_email(&pool, &dto.email).await?.is_some() {
         return Ok(HttpResponse::Conflict().body("Account already exists"));
     }
 
-    let entity = AccountService::create(pool, &auth.email, &auth.password).await?;
+    let entity = AccountService::create(pool, &dto.email, &dto.password).await?;
     let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
     let read_key_cookie = Cookie::build("READ_KEY", &entity.read_key).finish();
 
