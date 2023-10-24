@@ -51,6 +51,22 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<i
     Ok(HttpResponse::Ok().json(AccountBo::from(entity)))
 }
 
+#[get("/api/user/authenticate")]
+async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+    let read_key = match request.cookie("READ_KEY") {
+        Some(read_key_cookie) => read_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No read key provided"));
+        }
+    };
+
+    if AccountService::find_by_read_key(&pool, &read_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
+    }
+
+    Ok(HttpResponse::Ok().body("Ok"))
+}
+
 #[post("/api/user/login")]
 async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
@@ -80,12 +96,14 @@ async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Resul
 #[post("/api/user/register")]
 async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
-    
-    if AccountService::find_by_email(&pool, &dto.email).await?.is_some() {
-        return Ok(HttpResponse::Conflict().body("Account already exists"));
-    }
 
-    let entity = AccountService::create(pool, &dto.email, &dto.password).await?;
+    let entity = match AccountService::create(&pool, &dto.email, &dto.password).await {
+        Ok(entity) => entity,
+        Err(_) => {
+            return Ok(HttpResponse::Conflict().body("Account already exists"));
+        },
+    };
+    
     let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
     let read_key_cookie = Cookie::build("READ_KEY", &entity.read_key).finish();
 
@@ -97,25 +115,26 @@ async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Re
     )
 }
 
-#[get("/api/user/authenticate")]
-async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
-    let read_key = match request.cookie("READ_KEY") {
-        Some(read_key_cookie) => read_key_cookie.value().to_string(),
+#[post("/api/user/update")]
+async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+    dto.validate()?;
+
+    let write_key = match request.cookie("WRITE_KEY") {
+        Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
-            return Ok(HttpResponse::Forbidden().body("No read key provided"));
+            return Ok(HttpResponse::Forbidden().body("No write key provided"));
         },
     };
 
-    if AccountService::find_by_read_key(&pool, &read_key).await?.is_none() {
-        return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
+    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
+    }
+
+    if AccountService::update(&pool, &write_key, &dto.email, &dto.password).await.is_err() {
+        return Ok(HttpResponse::Conflict().body("Email is already registered"));
     }
 
     Ok(HttpResponse::Ok().body("Ok"))
-}
-
-#[get("/api/user/update")]
-async fn update() -> impl Responder {
-    HttpResponse::Ok().body("/api/user/update")
 }
 
 #[get("/api/user/delete")]
