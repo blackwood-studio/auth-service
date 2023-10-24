@@ -9,7 +9,9 @@
 
 use actix_web::web::Data;
 
-use bcrypt::{hash, DEFAULT_COST};
+use bcrypt::DEFAULT_COST;
+use bcrypt::hash;
+
 use sqlx::PgPool;
 use sqlx::postgres::PgQueryResult;
 
