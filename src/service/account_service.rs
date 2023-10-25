@@ -72,4 +72,12 @@ impl AccountService {
             .execute(&***pool).await?
         )
     }
+
+    pub async fn delete(pool: &Data<PgPool>, write_key: &String) -> crate::Result<PgQueryResult> {
+        Ok(
+            sqlx::query(r#"DELETE FROM account WHERE write_key = $1;"#)
+            .bind(write_key)
+            .execute(&***pool).await?
+        )
+    }
 }
