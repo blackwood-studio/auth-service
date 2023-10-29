@@ -67,6 +67,24 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service:
     Ok(HttpResponse::Ok().body("Ok"))
 }
 
+#[get("/api/user/delete")]
+async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+    let write_key = match request.cookie("WRITE_KEY") {
+        Some(write_key_cookie) => write_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No write key provided"));
+        },
+    };
+
+    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
+    }
+
+    AccountService::delete(&pool, &write_key).await?;
+
+    Ok(HttpResponse::Ok().body("Ok"))
+}
+
 #[post("/api/user/login")]
 async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
@@ -133,24 +151,6 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AccountDto>)
     if AccountService::update(&pool, &write_key, &dto.email, &dto.password).await.is_err() {
         return Ok(HttpResponse::Conflict().body("Email is already registered"));
     }
-
-    Ok(HttpResponse::Ok().body("Ok"))
-}
-
-#[post("/api/user/delete")]
-async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
-    let write_key = match request.cookie("WRITE_KEY") {
-        Some(write_key_cookie) => write_key_cookie.value().to_string(),
-        None => {
-            return Ok(HttpResponse::Forbidden().body("No write key provided"));
-        },
-    };
-
-    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
-        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
-    }
-
-    AccountService::delete(&pool, &write_key).await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }

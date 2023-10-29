@@ -1,7 +1,7 @@
 {
     "_type": "export",
     "__export_format": 4,
-    "__export_date": "2023-10-24T19:26:59.003Z",
+    "__export_date": "2023-10-29T22:46:58.469Z",
     "__export_source": "insomnia.desktop.app:v2023.5.8",
     "resources": [
         {
@@ -71,9 +71,37 @@
             "_type": "request"
         },
         {
+            "_id": "req_e40228895f714aa29cd3817c3b5c0bb2",
+            "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
+            "modified": 1698619428083,
+            "created": 1698619253206,
+            "url": "http://localhost:8080/api/user/delete",
+            "name": "/api/user/delete | NORMAL",
+            "description": "",
+            "method": "GET",
+            "body": {},
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "User-Agent",
+                    "value": "insomnia/2023.5.8"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1696082679353.5,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
             "_id": "req_1dae7d8434c2449e9ace614830e643ef",
             "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
-            "modified": 1698171295882,
+            "modified": 1698619503962,
             "created": 1695740932864,
             "url": "http://localhost:8080/api/user/login",
             "name": "/api/user/login | NORMAL",
@@ -81,7 +109,7 @@
             "method": "POST",
             "body": {
                 "mimeType": "application/json",
-                "text": "{\n\t\"email\": \"uff@email.com\",\n\t\"password\": \"0123456789\"\n}\n"
+                "text": "{\n\t\"email\": \"test@email.com\",\n\t\"password\": \"0123456789\"\n}\n"
             },
             "parameters": [],
             "headers": [
@@ -506,34 +534,10 @@
         {
             "_id": "jar_754c63735b76461d85cccc3dbc69b1c7",
             "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
-            "modified": 1698171297445,
+            "modified": 1698619520115,
             "created": 1695220900947,
             "name": "Default Jar",
-            "cookies": [
-                {
-                    "key": "WRITE_KEY",
-                    "value": "dbfee3a9-0cf0-41a7-b323-201bc5023c25",
-                    "domain": "localhost",
-                    "path": "/api/user",
-                    "hostOnly": true,
-                    "pathIsDefault": true,
-                    "creation": "2023-10-24T18:12:42.552Z",
-                    "lastAccessed": "2023-10-24T18:14:57.444Z",
-                    "id": "788234423363074",
-                    "expires": null
-                },
-                {
-                    "key": "READ_KEY",
-                    "value": "15d86393-f7e6-400a-97c9-b4c6a0ddb92b",
-                    "domain": "localhost",
-                    "path": "/api/user",
-                    "hostOnly": true,
-                    "pathIsDefault": true,
-                    "creation": "2023-10-24T18:12:42.552Z",
-                    "lastAccessed": "2023-10-24T18:14:57.445Z",
-                    "id": "27167614631345427"
-                }
-            ],
+            "cookies": [],
             "_type": "cookie_jar"
         }
     ]
