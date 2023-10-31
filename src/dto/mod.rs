@@ -9,3 +9,6 @@
 
 mod account_dto;
 pub use account_dto::AccountDto;
+
+mod authenticate_dto;
+pub use authenticate_dto::AuthenticateDto;

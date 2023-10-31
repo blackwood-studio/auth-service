@@ -11,21 +11,16 @@ use serde::Deserialize;
 use serde::Serialize;
 use validator::Validate;
 
-use crate::entity::AccountEntity;
-
 #[derive(Validate, Deserialize, Serialize)]
-pub struct AccountDto {
+pub struct AuthenticateDto {
     #[serde(default)] 
     #[validate(email(message = "Invalid email address"))]
     #[validate(length(min = 1, message = "The min size of the email is 1"))]
     #[validate(length(max = 255, message = "The max size of the email is 255"))]
-    pub email: String
-}
+    pub email: String,
 
-impl From<AccountEntity> for AccountDto {
-    fn from(entity: AccountEntity) -> AccountDto {
-        AccountDto {  
-            email: entity.email
-        }
-    }
+    #[serde(default)] 
+    #[validate(length(min = 8, message = "The min size of the password is 8"))]
+    #[validate(length(max = 255, message = "The max size of the password is 255"))]
+    pub password: String
 }

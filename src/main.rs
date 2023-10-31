@@ -24,6 +24,7 @@ use actix_web::web::Data;
 use actix_web::web::Json;
 
 use auth_service::dto::AccountDto;
+use auth_service::dto::AuthenticateDto;
 use auth_service::service::AccountService;
 
 use sqlx::PgPool;
@@ -85,7 +86,7 @@ async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Resul
 }
 
 #[post("/api/user/login")]
-async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+async fn login(pool: Data<PgPool>, dto: Json<AuthenticateDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
     
     let entity = match AccountService::find_by_email(&pool, &dto.email).await? {
@@ -111,7 +112,7 @@ async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Resul
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+async fn register(pool: Data<PgPool>, dto: Json<AuthenticateDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
 
     let entity = match AccountService::create(&pool, &dto.email, &dto.password).await {
@@ -133,7 +134,7 @@ async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Re
 }
 
 #[post("/api/user/update")]
-async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AuthenticateDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
 
     let write_key = match request.cookie("WRITE_KEY") {
