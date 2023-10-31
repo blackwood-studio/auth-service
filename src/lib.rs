@@ -13,7 +13,6 @@ pub use exception::Exception;
 mod result;
 pub use result::Result;
 
-pub mod bo;
 pub mod dto;
 pub mod entity;
 pub mod service;

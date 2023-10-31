@@ -23,7 +23,6 @@ use actix_web::post;
 use actix_web::web::Data;
 use actix_web::web::Json;
 
-use auth_service::bo::AccountBo;
 use auth_service::dto::AccountDto;
 use auth_service::service::AccountService;
 
@@ -48,7 +47,7 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<i
         }
     };
 
-    Ok(HttpResponse::Ok().json(AccountBo::from(entity)))
+    Ok(HttpResponse::Ok().json(AccountDto::from(entity)))
 }
 
 #[get("/api/user/authenticate")]
