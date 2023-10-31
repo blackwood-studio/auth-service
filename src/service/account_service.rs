@@ -51,9 +51,9 @@ impl AccountService {
         let entity = AccountEntity::new(email, password)?;
         
         Ok(
-            sqlx::query_as::<_, AccountEntity>(r#"INSERT INTO account(email, password, write_key, read_key) VALUES ($1,$2,$3,$4) RETURNING id, email, password, write_key, read_key;"#)
+            sqlx::query_as::<_, AccountEntity>(r#"INSERT INTO account(email, password_hash, write_key, read_key) VALUES ($1,$2,$3,$4) RETURNING id, email, password_hash, write_key, read_key;"#)
             .bind(&entity.email)
-            .bind(&entity.password)
+            .bind(&entity.password_hash)
             .bind(&entity.write_key)
             .bind(&entity.read_key)
             .fetch_one(&***pool)
@@ -62,12 +62,12 @@ impl AccountService {
     }
 
     pub async fn update(pool: &Data<PgPool>, write_key: &String, email: &String, password: &String) -> crate::Result<PgQueryResult> {
-        let password = hash(password, DEFAULT_COST)?;
+        let password_hash = hash(password, DEFAULT_COST)?;
         
         Ok(
-            sqlx::query(r#"UPDATE account SET email = $1, password = $2 WHERE write_key = $3;"#)
+            sqlx::query(r#"UPDATE account SET email = $1, password_hash = $2 WHERE write_key = $3;"#)
             .bind(email)
-            .bind(password)
+            .bind(password_hash)
             .bind(write_key)
             .execute(&***pool).await?
         )

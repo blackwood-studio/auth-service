@@ -20,7 +20,7 @@ use uuid::Uuid;
 pub struct AccountEntity {
     pub id: i32,
     pub email: String,
-    pub password: String,
+    pub password_hash: String,
     pub write_key: String,
     pub read_key: String
 }
@@ -31,7 +31,7 @@ impl AccountEntity {
             AccountEntity { 
                 id: 0, 
                 email: email.clone(),
-                password: hash(password, DEFAULT_COST)?,
+                password_hash: hash(password, DEFAULT_COST)?,
                 write_key: Uuid::new_v4().to_string(),
                 read_key: Uuid::new_v4().to_string()
             }
@@ -40,7 +40,7 @@ impl AccountEntity {
 
     pub fn verify(&self, password: &String) -> Result<bool, BcryptError> {
         Ok(
-            verify(password, &self.password)?
+            verify(password, &self.password_hash)?
         )
     }
 }
