@@ -1,7 +1,7 @@
 {
     "_type": "export",
     "__export_format": 4,
-    "__export_date": "2023-10-31T22:04:03.858Z",
+    "__export_date": "2023-10-31T22:53:46.194Z",
     "__export_source": "insomnia.desktop.app:v2023.5.8",
     "resources": [
         {
@@ -376,6 +376,41 @@
             ],
             "authentication": {},
             "metaSortKey": -1695220907520,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_dec571e779ed4807afe0b532a9383125",
+            "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
+            "modified": 1698792758307,
+            "created": 1698792738729,
+            "url": "http://localhost:8080/api/user/update",
+            "name": "/api/user/update | ONLY_ONE_PARAMETER",
+            "description": "",
+            "method": "PUT",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n\t\"password\": \"5432106789\"\n}\n"
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "insomnia/2023.5.8"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1695220907495,
             "isPrivate": false,
             "settingStoreCookies": true,
             "settingSendCookies": true,

@@ -13,7 +13,6 @@ use bcrypt::DEFAULT_COST;
 use bcrypt::hash;
 
 use sqlx::PgPool;
-use sqlx::postgres::PgQueryResult;
 
 use uuid::Uuid;
 
@@ -65,23 +64,31 @@ impl AccountService {
         )
     }
 
-    pub async fn update(pool: &Data<PgPool>, write_key: &String, email: &String, password: &String) -> crate::Result<PgQueryResult> {
-        let password_hash = hash(password, DEFAULT_COST)?;
-        
-        Ok(
-            sqlx::query(r#"UPDATE account SET email = $1, password_hash = $2 WHERE write_key = $3;"#)
+    pub async fn update(pool: &Data<PgPool>, write_key: &String, email: &Option<String>, password: &Option<String>) -> crate::Result<()> {
+        if let Some(email) = email {
+            sqlx::query(r#"UPDATE account SET email = $1 WHERE write_key = $2;"#)
             .bind(email)
+            .bind(write_key)
+            .execute(&***pool).await?;
+        }
+
+        if let Some(password) = password {
+            let password_hash = hash(password, DEFAULT_COST)?;
+
+            sqlx::query(r#"UPDATE account SET password_hash = $1 WHERE write_key = $2;"#)
             .bind(password_hash)
             .bind(write_key)
-            .execute(&***pool).await?
-        )
+            .execute(&***pool).await?;
+        }
+
+        Ok(())
     }
 
-    pub async fn delete(pool: &Data<PgPool>, write_key: &String) -> crate::Result<PgQueryResult> {
-        Ok(
-            sqlx::query(r#"DELETE FROM account WHERE write_key = $1;"#)
-            .bind(write_key)
-            .execute(&***pool).await?
-        )
+    pub async fn delete(pool: &Data<PgPool>, write_key: &String) -> crate::Result<()> {
+        sqlx::query(r#"DELETE FROM account WHERE write_key = $1;"#)
+        .bind(write_key)
+        .execute(&***pool).await?;
+
+        Ok(())
     }
 }
