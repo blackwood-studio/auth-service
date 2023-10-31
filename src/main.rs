@@ -18,8 +18,10 @@ use actix_web::HttpResponse;
 use actix_web::HttpServer;
 use actix_web::Responder;
 use actix_web::cookie::Cookie;
+use actix_web::delete;
 use actix_web::get;
 use actix_web::post;
+use actix_web::put;
 use actix_web::web::Data;
 use actix_web::web::Json;
 
@@ -65,24 +67,6 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service:
     if AccountService::find_by_read_key(&pool, &read_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
     }
-
-    Ok(HttpResponse::Ok().body("Ok"))
-}
-
-#[get("/api/user/delete")]
-async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
-    let write_key = match request.cookie("WRITE_KEY") {
-        Some(write_key_cookie) => write_key_cookie.value().to_string(),
-        None => {
-            return Ok(HttpResponse::Forbidden().body("No write key provided"));
-        },
-    };
-
-    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
-        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
-    }
-
-    AccountService::delete(&pool, &write_key).await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
@@ -135,7 +119,7 @@ async fn register(pool: Data<PgPool>, dto: Json<AuthenticateDto>) -> auth_servic
     )
 }
 
-#[post("/api/user/update")]
+#[put("/api/user/update")]
 async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AuthenticateDto>) -> auth_service::Result<impl Responder> {
     dto.validate()?;
 
@@ -153,6 +137,24 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<Authenticate
     if AccountService::update(&pool, &write_key, &dto.email, &dto.password).await.is_err() {
         return Ok(HttpResponse::Conflict().body("Email is already registered"));
     }
+
+    Ok(HttpResponse::Ok().body("Ok"))
+}
+
+#[delete("/api/user/delete")]
+async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+    let write_key = match request.cookie("WRITE_KEY") {
+        Some(write_key_cookie) => write_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No write key provided"));
+        },
+    };
+
+    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
+    }
+
+    AccountService::delete(&pool, &write_key).await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
