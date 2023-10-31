@@ -15,6 +15,8 @@ use bcrypt::hash;
 use sqlx::PgPool;
 use sqlx::postgres::PgQueryResult;
 
+use uuid::Uuid;
+
 use crate::entity::AccountEntity;
 
 pub struct AccountService;
@@ -48,14 +50,16 @@ impl AccountService {
     }
 
     pub async fn create(pool: &Data<PgPool>, email: &String, password: &String) -> crate::Result<AccountEntity> {
-        let entity = AccountEntity::new(email, password)?;
+        let password_hash = hash(password, DEFAULT_COST)?;
+        let write_key = Uuid::new_v4().to_string();
+        let read_key = Uuid::new_v4().to_string();
         
         Ok(
             sqlx::query_as::<_, AccountEntity>(r#"INSERT INTO account(email, password_hash, write_key, read_key) VALUES ($1,$2,$3,$4) RETURNING id, email, password_hash, write_key, read_key;"#)
-            .bind(&entity.email)
-            .bind(&entity.password_hash)
-            .bind(&entity.write_key)
-            .bind(&entity.read_key)
+            .bind(email)
+            .bind(password_hash)
+            .bind(write_key)
+            .bind(read_key)
             .fetch_one(&***pool)
             .await?
         )

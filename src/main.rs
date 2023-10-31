@@ -27,6 +27,8 @@ use auth_service::dto::AccountDto;
 use auth_service::dto::AuthenticateDto;
 use auth_service::service::AccountService;
 
+use bcrypt::verify;
+
 use sqlx::PgPool;
 use sqlx::postgres::PgConnectOptions;
 
@@ -96,7 +98,7 @@ async fn login(pool: Data<PgPool>, dto: Json<AuthenticateDto>) -> auth_service::
         }
     };
 
-    if !entity.verify(&dto.password)? {
+    if !verify(&dto.password, &entity.password_hash)? {
         return Ok(HttpResponse::Forbidden().body("Invalid login data"));
     }
 
