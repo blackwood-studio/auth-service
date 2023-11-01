@@ -45,7 +45,7 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder,
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
             return Ok(HttpResponse::Forbidden().body("No read key provided"));
-        },
+        }
     };
 
     let mut connection = pool.acquire().await?;
@@ -90,7 +90,7 @@ async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
         Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
             return Ok(HttpResponse::Forbidden().body("No write key provided"));
-        },
+        }
     };
 
     let mut connection = pool.acquire().await?;
@@ -158,7 +158,7 @@ async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Respond
         Ok(entity) => entity,
         Err(_) => {
             return Ok(HttpResponse::Conflict().body("Account already exists"));
-        },
+        }
     };
     
     let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
@@ -182,7 +182,7 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) 
         Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
             return Ok(HttpResponse::Forbidden().body("No write key provided"));
-        },
+        }
     };
 
     let mut connection = pool.acquire().await?;
@@ -207,7 +207,7 @@ async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
         Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
             return Ok(HttpResponse::Forbidden().body("No write key provided"));
-        },
+        }
     };
 
     let mut connection = pool.acquire().await?;
