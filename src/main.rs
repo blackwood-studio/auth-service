@@ -33,6 +33,7 @@ use auth_service::service::AccountService;
 
 use bcrypt::verify;
 
+use sqlx::Connection;
 use sqlx::PgPool;
 use sqlx::postgres::PgConnectOptions;
 
@@ -47,12 +48,17 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder,
         },
     };
 
-    let entity = match AccountService::find_by_read_key(&pool, &read_key).await? {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    let entity = match AccountService::find_by_read_key(&mut transaction, &read_key).await? {
         Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
         }
     };
+
+    transaction.commit().await?;
 
     Ok(HttpResponse::Ok().json(AccountDto::from(entity)))
 }
@@ -66,9 +72,14 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl R
         }
     };
 
-    if AccountService::find_by_read_key(&pool, &read_key).await?.is_none() {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    if AccountService::find_by_read_key(&mut transaction, &read_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
     }
+
+    transaction.commit().await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
@@ -82,7 +93,10 @@ async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
         },
     };
 
-    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    if AccountService::find_by_write_key(&mut transaction, &write_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
     }
 
@@ -91,6 +105,8 @@ async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
 
     write_key_cookie.make_removal();
     read_key_cookie.make_removal();
+
+    transaction.commit().await?;
 
     Ok(
         HttpResponse::Ok()
@@ -104,7 +120,10 @@ async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
 async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
     
-    let entity = match AccountService::find_by_email(&pool, &dto.email).await? {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    let entity = match AccountService::find_by_email(&mut transaction, &dto.email).await? {
         Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid login data"));
@@ -118,6 +137,8 @@ async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder,
     let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
     let read_key_cookie = Cookie::build("READ_KEY", &entity.read_key).finish();
 
+    transaction.commit().await?;
+
     Ok(
         HttpResponse::Ok()
         .cookie(write_key_cookie)
@@ -130,7 +151,10 @@ async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder,
 async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
-    let entity = match AccountService::create(&pool, &dto.email, &dto.password).await {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    let entity = match AccountService::create(&mut transaction, &dto.email, &dto.password).await {
         Ok(entity) => entity,
         Err(_) => {
             return Ok(HttpResponse::Conflict().body("Account already exists"));
@@ -139,6 +163,8 @@ async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Respond
     
     let write_key_cookie = Cookie::build("WRITE_KEY", &entity.write_key).finish();
     let read_key_cookie = Cookie::build("READ_KEY", &entity.read_key).finish();
+
+    transaction.commit().await?;
 
     Ok(
         HttpResponse::Ok()
@@ -159,13 +185,18 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) 
         },
     };
 
-    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    if AccountService::find_by_write_key(&mut transaction, &write_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
     }
 
-    if AccountService::update(&pool, &write_key, &dto.email, &dto.password).await.is_err() {
+    if AccountService::update(&mut transaction, &write_key, &dto.email, &dto.password).await.is_err() {
         return Ok(HttpResponse::Conflict().body("Email is already registered"));
     }
+
+    transaction.commit().await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
@@ -179,11 +210,16 @@ async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
         },
     };
 
-    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+    let mut connection = pool.acquire().await?;
+    let mut transaction = connection.begin().await?;
+
+    if AccountService::find_by_write_key(&mut transaction, &write_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
     }
 
-    AccountService::delete(&pool, &write_key).await?;
+    AccountService::delete(&mut transaction, &write_key).await?;
+
+    transaction.commit().await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
