@@ -16,12 +16,13 @@ use sqlx::PgPool;
 
 use uuid::Uuid;
 
+use crate::Error;
 use crate::entity::AccountEntity;
 
 pub struct AccountService;
 
 impl AccountService {
-    pub async fn find_by_email(pool: &Data<PgPool>, email: &String) -> crate::Result<Option<AccountEntity>> {
+    pub async fn find_by_email(pool: &Data<PgPool>, email: &String) -> Result<Option<AccountEntity>, Error> {
         Ok(
             sqlx::query_as::<_, AccountEntity>(r#"SELECT * FROM account WHERE email = $1;"#)
             .bind(email)
@@ -30,7 +31,7 @@ impl AccountService {
         )
     }
 
-    pub async fn find_by_write_key(pool: &Data<PgPool>, write_key: &String) -> crate::Result<Option<AccountEntity>> {
+    pub async fn find_by_write_key(pool: &Data<PgPool>, write_key: &String) -> Result<Option<AccountEntity>, Error> {
         Ok(
             sqlx::query_as::<_, AccountEntity>(r#"SELECT * FROM account WHERE write_key = $1;"#)
             .bind(write_key)
@@ -39,7 +40,7 @@ impl AccountService {
         )
     }
 
-    pub async fn find_by_read_key(pool: &Data<PgPool>, read_key: &String) -> crate::Result<Option<AccountEntity>> {
+    pub async fn find_by_read_key(pool: &Data<PgPool>, read_key: &String) -> Result<Option<AccountEntity>, Error> {
         Ok(
             sqlx::query_as::<_, AccountEntity>(r#"SELECT * FROM account WHERE read_key = $1;"#)
             .bind(read_key)
@@ -48,7 +49,7 @@ impl AccountService {
         )
     }
 
-    pub async fn create(pool: &Data<PgPool>, email: &String, password: &String) -> crate::Result<AccountEntity> {
+    pub async fn create(pool: &Data<PgPool>, email: &String, password: &String) -> Result<AccountEntity, Error> {
         let password_hash = hash(password, DEFAULT_COST)?;
         let write_key = Uuid::new_v4().to_string();
         let read_key = Uuid::new_v4().to_string();
@@ -64,7 +65,7 @@ impl AccountService {
         )
     }
 
-    pub async fn update(pool: &Data<PgPool>, write_key: &String, email: &Option<String>, password: &Option<String>) -> crate::Result<()> {
+    pub async fn update(pool: &Data<PgPool>, write_key: &String, email: &Option<String>, password: &Option<String>) -> Result<(), Error> {
         if let Some(email) = email {
             sqlx::query(r#"UPDATE account SET email = $1 WHERE write_key = $2;"#)
             .bind(email)
@@ -84,7 +85,7 @@ impl AccountService {
         Ok(())
     }
 
-    pub async fn delete(pool: &Data<PgPool>, write_key: &String) -> crate::Result<()> {
+    pub async fn delete(pool: &Data<PgPool>, write_key: &String) -> Result<(), Error> {
         sqlx::query(r#"DELETE FROM account WHERE write_key = $1;"#)
         .bind(write_key)
         .execute(&***pool).await?;

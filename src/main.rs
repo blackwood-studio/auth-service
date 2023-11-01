@@ -25,6 +25,7 @@ use actix_web::put;
 use actix_web::web::Data;
 use actix_web::web::Json;
 
+use auth_service::Error;
 use auth_service::dto::AccountDto;
 use auth_service::dto::FormDto;
 use auth_service::dto::UpdateDto;
@@ -38,7 +39,7 @@ use sqlx::postgres::PgConnectOptions;
 use validator::Validate;
 
 #[get("/api/user")]
-async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
     let read_key = match request.cookie("READ_KEY") {
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
@@ -57,7 +58,7 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<i
 }
 
 #[get("/api/user/authenticate")]
-async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
     let read_key = match request.cookie("READ_KEY") {
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
@@ -73,7 +74,7 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service:
 }
 
 #[post("/api/user/login")]
-async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> auth_service::Result<impl Responder> {
+async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
     
     let entity = match AccountService::find_by_email(&pool, &dto.email).await? {
@@ -99,7 +100,7 @@ async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> auth_service::Result<i
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> auth_service::Result<impl Responder> {
+async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
     let entity = match AccountService::create(&pool, &dto.email, &dto.password).await {
@@ -121,7 +122,7 @@ async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> auth_service::Resul
 }
 
 #[put("/api/user/update")]
-async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) -> auth_service::Result<impl Responder> {
+async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
     let write_key = match request.cookie("WRITE_KEY") {
@@ -143,7 +144,7 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) 
 }
 
 #[delete("/api/user/delete")]
-async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
     let write_key = match request.cookie("WRITE_KEY") {
         Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
