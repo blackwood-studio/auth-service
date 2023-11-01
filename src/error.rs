@@ -25,7 +25,7 @@ pub enum Error {
 impl ResponseError for Error {
     fn error_response(&self) -> HttpResponse {
         match self {
-            Error::ValidationError(errors) => HttpResponse::build(self.status_code()).json(errors),
+            Error::ValidationError(errors) => HttpResponse::build(self.status_code()).body(errors.to_string()),
             _ => HttpResponse::build(self.status_code()).body(self.to_string())
         }
     }
