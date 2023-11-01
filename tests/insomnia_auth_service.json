@@ -1,7 +1,7 @@
 {
     "_type": "export",
     "__export_format": 4,
-    "__export_date": "2023-10-31T22:53:46.194Z",
+    "__export_date": "2023-11-01T12:19:47.653Z",
     "__export_source": "insomnia.desktop.app:v2023.5.8",
     "resources": [
         {
@@ -71,9 +71,44 @@
             "_type": "request"
         },
         {
+            "_id": "req_c70c8b0826d4424192d4d2c27817f5cc",
+            "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
+            "modified": 1698841130426,
+            "created": 1698840118536,
+            "url": "http://localhost:8080/api/user/logout",
+            "name": "/api/user/logout | NORMAL",
+            "description": "",
+            "method": "POST",
+            "body": {
+                "mimeType": "application/json",
+                "text": ""
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "insomnia/2023.5.8"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1696082679353.5,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
             "_id": "req_1dae7d8434c2449e9ace614830e643ef",
             "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
-            "modified": 1698788980308,
+            "modified": 1698841150871,
             "created": 1695740932864,
             "url": "http://localhost:8080/api/user/login",
             "name": "/api/user/login | NORMAL",
@@ -353,7 +388,7 @@
         {
             "_id": "req_e84edc0467af4a09801bb7c07d30d3f9",
             "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
-            "modified": 1698789673308,
+            "modified": 1698838797899,
             "created": 1698171034603,
             "url": "http://localhost:8080/api/user/update",
             "name": "/api/user/update | NORMAL",
@@ -388,7 +423,7 @@
         {
             "_id": "req_dec571e779ed4807afe0b532a9383125",
             "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
-            "modified": 1698792758307,
+            "modified": 1698841040228,
             "created": 1698792738729,
             "url": "http://localhost:8080/api/user/update",
             "name": "/api/user/update | ONLY_ONE_PARAMETER",
@@ -569,7 +604,7 @@
         {
             "_id": "jar_754c63735b76461d85cccc3dbc69b1c7",
             "parentId": "wrk_c76201bb79864dbfb56fa285c077fd60",
-            "modified": 1698789660176,
+            "modified": 1698841155029,
             "created": 1695220900947,
             "name": "Default Jar",
             "cookies": [],
