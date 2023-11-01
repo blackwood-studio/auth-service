@@ -73,6 +73,33 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl R
     Ok(HttpResponse::Ok().body("Ok"))
 }
 
+#[post("/api/user/logout")]
+async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
+    let write_key = match request.cookie("WRITE_KEY") {
+        Some(write_key_cookie) => write_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No write key provided"));
+        },
+    };
+
+    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
+    }
+
+    let mut write_key_cookie = Cookie::build("WRITE_KEY", "").finish();
+    let mut read_key_cookie = Cookie::build("READ_KEY", "").finish();
+
+    write_key_cookie.make_removal();
+    read_key_cookie.make_removal();
+
+    Ok(
+        HttpResponse::Ok()
+        .cookie(write_key_cookie)
+        .cookie(read_key_cookie)
+        .body("Ok")
+    )
+}
+
 #[post("/api/user/login")]
 async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
@@ -175,9 +202,10 @@ async fn main() -> io::Result<()> {
         App::new()
         .app_data(Data::new(pool))
         .service(get)
+        .service(authenticate)
+        .service(logout)
         .service(login)
         .service(register)
-        .service(authenticate)
         .service(update)
         .service(delete)
     })
