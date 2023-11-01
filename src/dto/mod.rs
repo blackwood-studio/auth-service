@@ -9,3 +9,9 @@
 
 mod account_dto;
 pub use account_dto::AccountDto;
+
+mod form_dto;
+pub use form_dto::FormDto;
+
+mod update_dto;
+pub use update_dto::UpdateDto;

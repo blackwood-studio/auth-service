@@ -7,13 +7,9 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-mod exception;
-pub use exception::Exception;
+mod error;
+pub use error::Error;
 
-mod result;
-pub use result::Result;
-
-pub mod bo;
 pub mod dto;
 pub mod entity;
 pub mod service;

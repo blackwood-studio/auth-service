@@ -18,14 +18,20 @@ use actix_web::HttpResponse;
 use actix_web::HttpServer;
 use actix_web::Responder;
 use actix_web::cookie::Cookie;
+use actix_web::delete;
 use actix_web::get;
 use actix_web::post;
+use actix_web::put;
 use actix_web::web::Data;
 use actix_web::web::Json;
 
-use auth_service::bo::AccountBo;
+use auth_service::Error;
 use auth_service::dto::AccountDto;
+use auth_service::dto::FormDto;
+use auth_service::dto::UpdateDto;
 use auth_service::service::AccountService;
+
+use bcrypt::verify;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgConnectOptions;
@@ -33,7 +39,7 @@ use sqlx::postgres::PgConnectOptions;
 use validator::Validate;
 
 #[get("/api/user")]
-async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
     let read_key = match request.cookie("READ_KEY") {
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
@@ -48,11 +54,11 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<i
         }
     };
 
-    Ok(HttpResponse::Ok().json(AccountBo::from(entity)))
+    Ok(HttpResponse::Ok().json(AccountDto::from(entity)))
 }
 
 #[get("/api/user/authenticate")]
-async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
+async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
     let read_key = match request.cookie("READ_KEY") {
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
@@ -67,26 +73,8 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> auth_service:
     Ok(HttpResponse::Ok().body("Ok"))
 }
 
-#[get("/api/user/delete")]
-async fn delete(pool: Data<PgPool>, request: HttpRequest) -> auth_service::Result<impl Responder> {
-    let write_key = match request.cookie("WRITE_KEY") {
-        Some(write_key_cookie) => write_key_cookie.value().to_string(),
-        None => {
-            return Ok(HttpResponse::Forbidden().body("No write key provided"));
-        },
-    };
-
-    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
-        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
-    }
-
-    AccountService::delete(&pool, &write_key).await?;
-
-    Ok(HttpResponse::Ok().body("Ok"))
-}
-
 #[post("/api/user/login")]
-async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
     
     let entity = match AccountService::find_by_email(&pool, &dto.email).await? {
@@ -96,7 +84,7 @@ async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Resul
         }
     };
 
-    if !entity.verify(&dto.password)? {
+    if !verify(&dto.password, &entity.password_hash)? {
         return Ok(HttpResponse::Forbidden().body("Invalid login data"));
     }
 
@@ -112,7 +100,7 @@ async fn login(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Resul
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
     let entity = match AccountService::create(&pool, &dto.email, &dto.password).await {
@@ -133,8 +121,8 @@ async fn register(pool: Data<PgPool>, dto: Json<AccountDto>) -> auth_service::Re
     )
 }
 
-#[post("/api/user/update")]
-async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AccountDto>) -> auth_service::Result<impl Responder> {
+#[put("/api/user/update")]
+async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
     let write_key = match request.cookie("WRITE_KEY") {
@@ -151,6 +139,24 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<AccountDto>)
     if AccountService::update(&pool, &write_key, &dto.email, &dto.password).await.is_err() {
         return Ok(HttpResponse::Conflict().body("Email is already registered"));
     }
+
+    Ok(HttpResponse::Ok().body("Ok"))
+}
+
+#[delete("/api/user/delete")]
+async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
+    let write_key = match request.cookie("WRITE_KEY") {
+        Some(write_key_cookie) => write_key_cookie.value().to_string(),
+        None => {
+            return Ok(HttpResponse::Forbidden().body("No write key provided"));
+        },
+    };
+
+    if AccountService::find_by_write_key(&pool, &write_key).await?.is_none() {
+        return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
+    }
+
+    AccountService::delete(&pool, &write_key).await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
