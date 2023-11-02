@@ -40,10 +40,10 @@ sqlx-cli migrate run
 ```
 
 6. Set the database credentials in the .env file
-7. Start the auth-service
+7. Run Cargo
 
 ``` bash
-auth-service
+cargo run
 ```
 
 
