@@ -144,6 +144,8 @@ async fn register(service: Data<AccountService>, dto: Json<FormDto>) -> Result<i
 
     let mut transaction = service.transaction().await?;
 
+    transaction.lock().await?;
+
     let entity = match transaction.create(&dto.email, &dto.password).await {
         Ok(entity) => entity,
         Err(_) => {
