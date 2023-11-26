@@ -7,8 +7,7 @@
  * permission of an Blackwood Studio Admin
  *******************************************************/
 
-#[macro_use]
-extern crate dotenv_codegen;
+
 
 use std::io;
 
@@ -33,14 +32,10 @@ use auth_service::service::AccountService;
 
 use bcrypt::verify;
 
-use sqlx::Connection;
-use sqlx::PgPool;
-use sqlx::postgres::PgConnectOptions;
-
 use validator::Validate;
 
 #[get("/api/user")]
-async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
+async fn get(service: Data<AccountService>, request: HttpRequest) -> Result<impl Responder, Error> {
     let read_key = match request.cookie("READ_KEY") {
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
@@ -48,10 +43,9 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder,
         }
     };
 
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
+    let mut transaction = service.transaction().await?;
 
-    let entity = match AccountService::find_by_read_key(&mut transaction, &read_key).await? {
+    let entity = match transaction.find_by_read_key(&read_key).await? {
         Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
@@ -64,7 +58,7 @@ async fn get(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder,
 }
 
 #[get("/api/user/authenticate")]
-async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
+async fn authenticate(service: Data<AccountService>, request: HttpRequest) -> Result<impl Responder, Error> {
     let read_key = match request.cookie("READ_KEY") {
         Some(read_key_cookie) => read_key_cookie.value().to_string(),
         None => {
@@ -72,10 +66,9 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl R
         }
     };
 
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
+    let mut transaction = service.transaction().await?;
 
-    if AccountService::find_by_read_key(&mut transaction, &read_key).await?.is_none() {
+    if transaction.find_by_read_key(&read_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid read key provided"));
     }
 
@@ -85,7 +78,7 @@ async fn authenticate(pool: Data<PgPool>, request: HttpRequest) -> Result<impl R
 }
 
 #[post("/api/user/logout")]
-async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
+async fn logout(service: Data<AccountService>, request: HttpRequest) -> Result<impl Responder, Error> {
     let write_key = match request.cookie("WRITE_KEY") {
         Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
@@ -93,10 +86,9 @@ async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
         }
     };
 
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
+    let mut transaction = service.transaction().await?;
 
-    if AccountService::find_by_write_key(&mut transaction, &write_key).await?.is_none() {
+    if transaction.find_by_write_key(&write_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
     }
 
@@ -117,13 +109,12 @@ async fn logout(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
 }
 
 #[post("/api/user/login")]
-async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
+async fn login(service: Data<AccountService>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
     
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
-
-    let entity = match AccountService::find_by_email(&mut transaction, &dto.email).await? {
+    let mut transaction = service.transaction().await?;
+    
+    let entity = match transaction.find_by_email(&dto.email).await? {
         Some(entity) => entity,
         None => {
             return Ok(HttpResponse::Forbidden().body("Invalid login data"));
@@ -148,13 +139,12 @@ async fn login(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder,
 }
 
 #[post("/api/user/register")]
-async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
+async fn register(service: Data<AccountService>, dto: Json<FormDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
+    let mut transaction = service.transaction().await?;
 
-    let entity = match AccountService::create(&mut transaction, &dto.email, &dto.password).await {
+    let entity = match transaction.create(&dto.email, &dto.password).await {
         Ok(entity) => entity,
         Err(_) => {
             return Ok(HttpResponse::Conflict().body("Account already exists"));
@@ -175,7 +165,7 @@ async fn register(pool: Data<PgPool>, dto: Json<FormDto>) -> Result<impl Respond
 }
 
 #[put("/api/user/update")]
-async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) -> Result<impl Responder, Error> {
+async fn update(service: Data<AccountService>, request: HttpRequest, dto: Json<UpdateDto>) -> Result<impl Responder, Error> {
     dto.validate()?;
 
     let write_key = match request.cookie("WRITE_KEY") {
@@ -185,14 +175,13 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) 
         }
     };
 
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
+    let mut transaction = service.transaction().await?;
 
-    if AccountService::find_by_write_key(&mut transaction, &write_key).await?.is_none() {
+    if transaction.find_by_write_key(&write_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
     }
 
-    if AccountService::update(&mut transaction, &write_key, &dto.email, &dto.password).await.is_err() {
+    if transaction.update(&write_key, &dto.email, &dto.password).await.is_err() {
         return Ok(HttpResponse::Conflict().body("Email is already registered"));
     }
 
@@ -202,7 +191,7 @@ async fn update(pool: Data<PgPool>, request: HttpRequest, dto: Json<UpdateDto>) 
 }
 
 #[delete("/api/user/delete")]
-async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Responder, Error> {
+async fn delete(service: Data<AccountService>, request: HttpRequest) -> Result<impl Responder, Error> {
     let write_key = match request.cookie("WRITE_KEY") {
         Some(write_key_cookie) => write_key_cookie.value().to_string(),
         None => {
@@ -210,15 +199,13 @@ async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
         }
     };
 
-    let mut connection = pool.acquire().await?;
-    let mut transaction = connection.begin().await?;
+    let mut transaction = service.transaction().await?;
 
-    if AccountService::find_by_write_key(&mut transaction, &write_key).await?.is_none() {
+    if transaction.find_by_write_key(&write_key).await?.is_none() {
         return Ok(HttpResponse::Forbidden().body("Invalid write key provided"));
     }
 
-    AccountService::delete(&mut transaction, &write_key).await?;
-
+    transaction.delete(&write_key).await?;
     transaction.commit().await?;
 
     Ok(HttpResponse::Ok().body("Ok"))
@@ -227,16 +214,10 @@ async fn delete(pool: Data<PgPool>, request: HttpRequest) -> Result<impl Respond
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     HttpServer::new(|| {
-        let pg_options = PgConnectOptions::new()
-        .host(dotenv!("HOST_ADDRESS"))
-        .database(dotenv!("DATABASE_NAME"))
-        .username(dotenv!("DATABASE_USER_NAME"))
-        .password(dotenv!("DATABASE_USER_PASSWORD"));
-
-        let pool = PgPool::connect_lazy_with(pg_options);
+        let service = AccountService::new();
 
         App::new()
-        .app_data(Data::new(pool))
+        .app_data(Data::new(service))
         .service(get)
         .service(authenticate)
         .service(logout)
