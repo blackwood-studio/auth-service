@@ -26,6 +26,18 @@ impl<'t> AccountTransaction<'t> {
     pub fn new(transaction: Transaction<'t, Postgres>) -> AccountTransaction<'t> {
         AccountTransaction { transaction }
     }
+
+    pub async fn lock(&mut self) -> Result<(), Error> {
+        sqlx::query(r#"
+            LOCK TABLE
+                account
+            IN SHARE MODE;
+        "#)
+        .execute(&mut *self.transaction)
+        .await?;
+
+        Ok(())
+    }
     
     pub async fn find_by_email(&mut self, email: &String) -> Result<Option<AccountEntity>, Error> {
         Ok(
@@ -147,7 +159,8 @@ impl<'t> AccountTransaction<'t> {
         sqlx::query(r#"
             DELETE FROM
                 account
-            WHERE write_key = $1;
+            WHERE
+                write_key = $1;
         "#)
         .bind(write_key)
         .execute(&mut *self.transaction)
