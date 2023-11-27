@@ -1,4 +1,5 @@
-# Auth-Service
+![Blackwood Studio Authentication Logo](https://github.com/blackwood-studio/auth-service/assets/74761380/824dd5ce-011a-427f-adcc-e8c35616d52a)
+
 
 ## Requirements
 
