@@ -17,6 +17,7 @@ use actix_web::Responder;
 use actix_web::cookie::Cookie;
 use actix_web::delete;
 use actix_web::get;
+use actix_web::middleware::Logger;
 use actix_web::post;
 use actix_web::put;
 use actix_web::web::Data;
@@ -29,6 +30,8 @@ use auth_service::dto::UpdateDto;
 use auth_service::service::AccountService;
 
 use bcrypt::verify;
+
+use env_logger::Env;
 
 use validator::Validate;
 
@@ -213,10 +216,13 @@ async fn delete(service: Data<AccountService>, request: HttpRequest) -> Result<i
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    
     HttpServer::new(|| {
         let service = AccountService::new();
 
         App::new()
+        .wrap(Logger::default())
         .app_data(Data::new(service))
         .service(get)
         .service(authenticate)
