@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# The manual build.sh script is still implemented for anyone to use, but won't be maintained.
+
 WINDOWS="x86_64-pc-windows-gnu"
 LINUX="x86_64-unknown-linux-gnu"
 
