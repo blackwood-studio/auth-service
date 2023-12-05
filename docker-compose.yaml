@@ -16,11 +16,24 @@ services:
     depends_on:
       - postgresql
 
-  auth-service:
+  auth-service-development:
     build:
       context: .
-      dockerfile: .docker/auth-service/Dockerfile
+      dockerfile: .docker/auth-service/development/Dockerfile
     depends_on:
       - sqlx-cli 
+    profiles:
+      - development
+    ports:
+      - "7878:7878"
+
+  auth-service-production:
+    build:
+      context: .
+      dockerfile: .docker/auth-service/production/Dockerfile
+    depends_on:
+      - sqlx-cli 
+    profiles:
+      - production
     ports:
       - "7878:7878"
