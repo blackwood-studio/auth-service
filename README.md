@@ -1,83 +1,57 @@
 ![Blackwood Studio Authentication Logo](https://github.com/blackwood-studio/auth-service/assets/74761380/824dd5ce-011a-427f-adcc-e8c35616d52a)
 
-
 ## Requirements
 
-- [WSL Ubuntu](https://apps.microsoft.com/detail/ubuntu/9PDXGNCFSCZV?hl=en-us&gl=US)
-- [Rust](https://www.rust-lang.org/learn/get-started)
-- [PostgreSQL](https://www.postgresql.org/download/linux/ubuntu/)
-- [sqlx-cli](https://crates.io/crates/sqlx-cli)
+- [Docker](https://www.docker.com/get-started/)
 
-## Setup for Development
+## Setup for development
 
-1. Start your PostgreSQL service
+1. Create .env file like the following example
+``` env
+# auth-service
+HOST_ADDRESS           = 'postgresql'
+DATABASE_NAME          = 'test'
+DATABASE_USER_NAME     = 'postgres'
+DATABASE_USER_PASSWORD = '123456'
+
+# sqlx-cli
+DATABASE_URL = 'postgres://postgres:123456@postgresql:5432/test'
+```
+
+2. Execute a docker build
 
 ``` bash
-sudo service postgresql start
+docker compose --profile development build
 ```
 
-2. Connect to your service
+3. Start your containers
 
 ``` bash
-sudo -u postgres psql
+docker compose --profile development up
 ```
 
-3. Create a database named `test`
+## Setup for production
 
-``` sql
-CREATE DATABASE test;
+1. Create .env file like the following example
+``` env
+# auth-service
+HOST_ADDRESS           = 'postgresql'
+DATABASE_NAME          = 'test'
+DATABASE_USER_NAME     = 'postgres'
+DATABASE_USER_PASSWORD = '123456'
+
+# sqlx-cli
+DATABASE_URL = 'postgres://postgres:123456@postgresql:5432/test'
 ```
 
-4. Clone the [auth-service](https://github.com/blackwood-studio/auth-service) project
+2. Execute a docker build
 
 ``` bash
-git clone https://github.com/blackwood-studio/auth-service.git
+docker compose --profile production build
 ```
 
-5. Open a terminal in your auth-service directory and start the migration script
+3. Start your containers
 
 ``` bash
-sqlx-cli migrate run
-```
-
-6. Set the database credentials in the .env file
-7. Run Cargo
-
-``` bash
-cargo run
-```
-
-
-## Setup for Production
-
-1. Start your PostgreSQL service
-
-``` bash
-sudo service postgresql start
-```
-
-2. Connect to your service
-
-``` bash
-sudo -u postgres psql
-```
-
-3. Create a database named `production`
-
-``` sql
-CREATE DATABASE production;
-```
-
-4. Download the latest release of [auth-service](https://github.com/blackwood-studio/auth-service/releases) for your platform
-5. Open a terminal in your auth-service directory and start the migration script
-
-``` bash
-sqlx-cli migrate run
-```
-
-6. Set the database credentials in the .env file
-7. Start the auth-service
-
-``` bash
-auth-service
+docker compose --profile production up
 ```
