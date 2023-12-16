@@ -36,12 +36,12 @@ docker compose --profile development up
 ``` env
 # auth-service
 HOST_ADDRESS           = 'postgresql'
-DATABASE_NAME          = 'test'
+DATABASE_NAME          = 'production'
 DATABASE_USER_NAME     = 'postgres'
 DATABASE_USER_PASSWORD = '123456'
 
 # sqlx-cli
-DATABASE_URL = 'postgres://postgres:123456@postgresql:5432/test'
+DATABASE_URL = 'postgres://postgres:123456@postgresql:5432/production'
 ```
 
 2. Execute a docker build
